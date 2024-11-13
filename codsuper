@@ -1,0 +1,164 @@
+class Item:
+    def __init__(self, id, nome, preco, quantidade, categoria, validade=None, garantia=None):
+        self.id = id
+        self.nome = nome
+        self.preco = preco
+        self.quantidade = quantidade
+        self.categoria = categoria
+        self.validade = validade
+        self.garantia = garantia
+
+    def __str__(self):
+        return f"Código: {self.id}, Nome: {self.nome}, Preço: R$ {self.preco:.2f}, Quantidade: {self.quantidade}"
+
+
+class Loja:
+    def __init__(self):
+        self.estoque = {}
+        self.caixa_aberto = False
+        self.caixa_inicial = 0.0
+        self.caixa_total = 0.0
+        self.vendas = []
+
+    def abrir_caixa(self):
+        if not self.caixa_aberto:
+            self.caixa_inicial = float(input("Informe o saldo inicial do caixa: R$ "))
+            self.caixa_total = self.caixa_inicial
+            self.caixa_aberto = True
+            print(f"Caixa aberto com saldo inicial de R$ {self.caixa_inicial:.2f}")
+        else:
+            print("O caixa já está em operação.")
+
+    def fechar_caixa(self):
+        if self.caixa_aberto:
+            print(f"Encerrando caixa com saldo final de R$ {self.caixa_total:.2f}")
+            self.caixa_aberto = False
+        else:
+            print("O caixa já está fechado.")
+
+    def add_produto(self):
+        id = int(input("Digite o código do produto: "))
+        if id in self.estoque:
+            print("Esse produto já está registrado!")
+            return
+        
+        nome = input("Nome do produto: ")
+        preco = float(input("Preço unitário (R$): "))
+        quantidade = int(input("Quantidade em estoque: "))
+        categoria = input("Categoria (alimento, utensílio, eletrônico): ")
+        validade = input("Data de validade (deixe vazio se não houver): ")
+        garantia = input("Garantia (deixe vazio se não houver): ")
+
+        produto = Item(id, nome, preco, quantidade, categoria, validade or None, garantia or None)
+        self.estoque[id] = produto
+        print("Produto registrado com sucesso.")
+
+    def busca_produto(self):
+        id = int(input("Código do produto para consulta: "))
+        produto = self.estoque.get(id)
+        if produto:
+            print("Detalhes do produto:", produto)
+        else:
+            print("Produto não encontrado.")
+
+    def excluir_produto(self):
+        id = int(input("Código do produto para remoção: "))
+        if id in self.estoque:
+            del self.estoque[id]
+            print("Produto removido do estoque.")
+        else:
+            print("Produto não localizado.")
+
+    def venda(self):
+        if not self.caixa_aberto:
+            print("O caixa precisa estar aberto para realizar vendas.")
+            return
+
+        total = 0.0
+        itens_venda = {}
+
+        while True:
+            id = int(input("Informe o código do produto (ou 0 para encerrar): "))
+            if id == 0:
+                break
+
+            produto = self.estoque.get(id)
+            if produto:
+                quantidade = int(input("Quantidade para venda: "))
+                if produto.quantidade >= quantidade:
+                    valor = produto.preco * quantidade
+                    produto.quantidade -= quantidade
+                    total += valor
+                    self.caixa_total += valor
+
+                    if produto.nome in itens_venda:
+                        itens_venda[produto.nome]['quantidade'] += quantidade
+                        itens_venda[produto.nome]['valor'] += valor
+                    else:
+                        itens_venda[produto.nome] = {'quantidade': quantidade, 'valor': valor}
+                    self.vendas.append((produto.nome, quantidade, valor))
+
+                    print("\nResumo da compra:")
+                    for nome, info in itens_venda.items():
+                        print(f"{info['quantidade']} x {nome}: R$ {info['valor']:.2f}")
+                    print(f"Total acumulado: R$ {total:.2f}\n")
+                else:
+                    print("Estoque insuficiente para a quantidade desejada.")
+            else:
+                print("Produto não encontrado no estoque.")
+
+        print(f"Total da venda: R$ {total:.2f}")
+
+    def proximos_vencer(self):
+        print("Produtos próximos da data de vencimento:")
+        for produto in self.estoque.values():
+            if produto.validade:
+                print(produto)
+
+    def estoque_baixo(self):
+        print("Produtos com estoque baixo:")
+        for produto in self.estoque.values():
+            if produto.quantidade < 5:
+                print(produto)
+
+
+loja = Loja()
+
+while True:
+    print("\nEscolha uma opção:")
+    print("1 - Abrir Caixa")
+    print("2 - Acessar Menu Principal")
+    print("3 - Fechar Caixa")
+    opcao = int(input("Opção: "))
+
+    if opcao == 1:
+        loja.abrir_caixa()
+    elif opcao == 2:
+        print("Menu Principal:")
+        print("1 - Registrar Novo Produto")
+        print("2 - Consultar Produto")
+        print("3 - Remover Produto")
+        print("4 - Realizar Venda")
+        print("5 - Produtos com Vencimento Próximo")
+        print("6 - Produtos com Estoque Baixo")
+        print("7 - Retornar ao Menu Anterior")
+
+        menu_opcao = int(input("Escolha uma opção: "))
+
+        if menu_opcao == 1:
+            loja.add_produto()
+        elif menu_opcao == 2:
+            loja.busca_produto()
+        elif menu_opcao == 3:
+            loja.excluir_produto()
+        elif menu_opcao == 4:
+            loja.venda()
+        elif menu_opcao == 5:
+            loja.proximos_vencer()
+        elif menu_opcao == 6:
+            loja.estoque_baixo()
+        elif menu_opcao == 7:
+            continue
+    elif opcao == 3:
+        loja.fechar_caixa()
+        break
